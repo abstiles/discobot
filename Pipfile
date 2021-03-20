@@ -1,0 +1,16 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+pynacl = "*"
+honeycomb-beeline = "*"
+
+[dev-packages]
+aws-sam-cli = "*"
+pipsync = {editable = true, ref = "add-static-analysis", git = "https://github.com/abstiles/pipsync"}
+pylint = "*"
+
+[requires]
+python_version = "3.8"

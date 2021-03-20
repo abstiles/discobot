@@ -1,0 +1,113 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+
+Description: Event consumer service
+Globals:
+  Function:
+    Runtime: python3.8
+
+Parameters:
+  DiscordClientId:
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Description: Honeycomb API Key
+    Default: "/discobot/discord_client_id"
+
+  DiscordPublicKey:
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Description: Usage Plan API Key
+    Default: "/discobot/discord_public_key"
+
+  HoneycombApiKey:
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Description: Honeycomb API Key
+    Default: "/discobot/honeycomb_api_key"
+   
+  UsagePlanApiKey:
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Description: Usage Plan API Key
+    Default: "/discobot/usage_plan_api_key"
+
+Resources:
+
+  ApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    Properties:
+      Description: Key used to post events to the API.
+      Enabled: true
+      StageKeys:
+        - RestApiId: !Ref SlashCommandsApi
+          StageName: !Ref SlashCommandsApi.Stage
+
+  ApiUsagePlanKey:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties:
+      KeyId: !Ref ApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref ApiUsagePlan
+
+  ApiUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    Properties:
+      ApiStages:
+        - ApiId: !Ref SlashCommandsApi
+          Stage: !Ref SlashCommandsApi.Stage
+      Quota:
+        Limit: 16000
+        Period: DAY
+      Throttle:
+        BurstLimit: 10
+        RateLimit: 10
+
+  SlashCommandsApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      EndpointConfiguration: REGIONAL
+      StageName: Prod
+      Auth:
+        DefaultAuthorizer: SignatureAuthorizer
+        Authorizers:
+          SignatureAuthorizer:
+            FunctionPayloadType: REQUEST
+            FunctionArn: !GetAtt SignatureAuthFunction.Arn
+            Identity:
+              ReauthorizeEvery: 0
+              Headers:
+                - "X-Signature-Ed25519"
+                - "X-Signature-Timestamp"
+
+  SignatureAuthFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src/validate_signature
+      Handler: validate_signature.lambda_handler
+      Environment:
+        Variables:
+          DISCORD_CLIENT_ID: !Ref DiscordClientId
+          DISCORD_PUBLIC_KEY: !Ref DiscordPublicKey
+          HONEYCOMB_API_KEY: !Ref HoneycombApiKey
+          USAGE_PLAN_API_KEY: !Ref UsagePlanApiKey
+
+  EventReceiver:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src/slash_command
+      Handler: slash_command.lambda_handler
+      Timeout: 30
+      Environment:
+        Variables:
+          HONEYCOMB_API_KEY: !Ref HoneycombApiKey
+      Events:
+        Interaction:
+          Type: Api
+          Properties:
+            Path: /discord
+            Method: POST
+            RestApiId: !Ref SlashCommandsApi
+
+
+Outputs:
+
+  ApiKeyId:
+    Value: !Ref ApiKey
+  ApiUrl:
+    Value: !Sub "${SlashCommandsApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/${SlashCommandsApi.Stage}"
