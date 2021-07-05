@@ -1,6 +1,0 @@
-cffi==1.14.5
-honeycomb-beeline==2.16.2
-libhoney==1.10.0
-pynacl==1.4.0
-six==1.15.0
-wrapt==1.12.1

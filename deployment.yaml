@@ -59,43 +59,42 @@ Resources:
     Properties:
       EndpointConfiguration: REGIONAL
       StageName: Prod
-      Auth:
-        DefaultAuthorizer: SignatureAuthorizer
-        Authorizers:
-          SignatureAuthorizer:
-            FunctionPayloadType: REQUEST
-            FunctionArn:
-              Fn::GetAtt:
-              - SignatureAuthFunction
-              - Arn
-            Identity:
-              ReauthorizeEvery: 0
-              Headers:
-              - X-Signature-Ed25519
-              - X-Signature-Timestamp
-  SignatureAuthFunction:
+      DefinitionBody:
+        swagger: 2.0
+        x-amazon-apigateway-request-validators:
+          params:
+            validateRequestBody: false
+            validateRequestParameters: true
+        paths:
+          /discord:
+            post:
+              x-amazon-apigateway-request-validator: params
+              parameters:
+              - in: header
+                required: true
+                type: string
+                name: X-Signature-Ed25519
+              - in: header
+                required: true
+                type: integer
+                name: X-Signature-Timestamp
+              x-amazon-apigateway-integration:
+                httpMethod: post
+                type: aws_proxy
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${EventReceiver.Arn}/invocations
+  EventReceiver:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://anjou-sl-resources/34294e444ec4ee62e819a293833227fc
-      Handler: validate_signature.lambda_handler
+      CodeUri: s3://anjou-sl-resources/582f9298762f925a020106a0b289c9ca
+      Handler: slash_command.lambda_handler
+      Timeout: 30
       Environment:
         Variables:
           DISCORD_CLIENT_ID:
             Ref: DiscordClientId
           DISCORD_PUBLIC_KEY:
             Ref: DiscordPublicKey
-          HONEYCOMB_API_KEY:
-            Ref: HoneycombApiKey
-          USAGE_PLAN_API_KEY:
-            Ref: UsagePlanApiKey
-  EventReceiver:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: s3://anjou-sl-resources/8cb66a2429989a7d8edab90c0f94ee23
-      Handler: slash_command.lambda_handler
-      Timeout: 30
-      Environment:
-        Variables:
           HONEYCOMB_API_KEY:
             Ref: HoneycombApiKey
       Events:

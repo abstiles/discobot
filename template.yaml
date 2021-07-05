@@ -63,29 +63,30 @@ Resources:
     Properties:
       EndpointConfiguration: REGIONAL
       StageName: Prod
-      Auth:
-        DefaultAuthorizer: SignatureAuthorizer
-        Authorizers:
-          SignatureAuthorizer:
-            FunctionPayloadType: REQUEST
-            FunctionArn: !GetAtt SignatureAuthFunction.Arn
-            Identity:
-              ReauthorizeEvery: 0
-              Headers:
-                - "X-Signature-Ed25519"
-                - "X-Signature-Timestamp"
-
-  SignatureAuthFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: ./src/validate_signature
-      Handler: validate_signature.lambda_handler
-      Environment:
-        Variables:
-          DISCORD_CLIENT_ID: !Ref DiscordClientId
-          DISCORD_PUBLIC_KEY: !Ref DiscordPublicKey
-          HONEYCOMB_API_KEY: !Ref HoneycombApiKey
-          USAGE_PLAN_API_KEY: !Ref UsagePlanApiKey
+      DefinitionBody:
+        swagger: 2.0
+        x-amazon-apigateway-request-validators:
+          params:
+            validateRequestBody: false
+            validateRequestParameters: true
+        paths:
+          /discord:
+            post:
+              x-amazon-apigateway-request-validator: params
+              parameters:
+                - in: header
+                  required: true
+                  type: string
+                  name: "X-Signature-Ed25519"
+                - in: header
+                  required: true
+                  type: integer
+                  name: "X-Signature-Timestamp"
+              x-amazon-apigateway-integration:
+                httpMethod: post
+                type: aws_proxy
+                uri:
+                  !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${EventReceiver.Arn}/invocations
 
   EventReceiver:
     Type: AWS::Serverless::Function
@@ -95,6 +96,8 @@ Resources:
       Timeout: 30
       Environment:
         Variables:
+          DISCORD_CLIENT_ID: !Ref DiscordClientId
+          DISCORD_PUBLIC_KEY: !Ref DiscordPublicKey
           HONEYCOMB_API_KEY: !Ref HoneycombApiKey
       Events:
         Interaction:
