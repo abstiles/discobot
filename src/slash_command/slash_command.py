@@ -4,7 +4,8 @@ import traceback
 from datetime import datetime, timezone, timedelta
 
 import beeline
-
+import diceydice.evaluate
+import diceydice.parser
 from beeline.middleware.awslambda import beeline_wrapper
 from nacl.signing import VerifyKey
 from nacl.exceptions import BadSignatureError
@@ -68,10 +69,28 @@ def lambda_handler(event, context):
     }
 
 
+def dice_roll(roll_expr):
+    result = diceydice.evaluate(
+        diceydice.parser.tokenize(roll_expr)
+    )
+    return f"{result.value()} <= {result}"
+
+
 def handle_command(body):
+    try:
+        roll_expr = body["data"]["options"][0]["value"]
+        content = dice_roll(roll_expr)
+    except Exception as exc:
+        content = ' '.join(exc.args)
+
     return {
         "statusCode": 200,
-        "body": '{"type":4,"data":{"content":"rolling the dice, baybee"}}',
+        "body": json.dumps(
+            {
+                "type": 4,
+                "data": {"content": content},
+            }
+        ),
     }
 
 
