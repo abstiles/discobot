@@ -181,7 +181,7 @@
         "diceydice": {
             "editable": true,
             "git": "https://github.com/abstiles/diceydice",
-            "ref": "8c5beddbb2be6ddb641d37525fcd67bd55f2415c"
+            "ref": "0825bbd7e5dddf668d543b648981ecb307bc1335"
         },
         "honeycomb-beeline": {
             "hashes": [
