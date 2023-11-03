@@ -9,7 +9,7 @@ package: deployment.yaml
 build: .aws-sam/build/template.yaml
 
 .aws-sam/build/template.yaml: template.yaml $(shell find src -name '*.py' -or -name 'requirements.txt')
-	pipenv run sam build --region "${REGION}"
+	pipenv run sam build --use-container --region "${REGION}"
 
 deployment.yaml: .aws-sam/build/template.yaml
 	pipenv run sam package --profile "${PROFILE}" --region "${REGION}" \

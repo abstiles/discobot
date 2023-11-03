@@ -21,48 +21,21 @@ Parameters:
     Type: "AWS::SSM::Parameter::Value<String>"
     Description: Honeycomb API Key
     Default: "/discobot/honeycomb_api_key"
-   
-  UsagePlanApiKey:
-    Type: "AWS::SSM::Parameter::Value<String>"
-    Description: Usage Plan API Key
-    Default: "/discobot/usage_plan_api_key"
 
 Resources:
-
-  ApiKey:
-    Type: AWS::ApiGateway::ApiKey
-    Properties:
-      Description: Key used to post events to the API.
-      Enabled: true
-      StageKeys:
-        - RestApiId: !Ref SlashCommandsApi
-          StageName: !Ref SlashCommandsApi.Stage
-
-  ApiUsagePlanKey:
-    Type: AWS::ApiGateway::UsagePlanKey
-    Properties:
-      KeyId: !Ref ApiKey
-      KeyType: API_KEY
-      UsagePlanId: !Ref ApiUsagePlan
-
-  ApiUsagePlan:
-    Type: AWS::ApiGateway::UsagePlan
-    Properties:
-      ApiStages:
-        - ApiId: !Ref SlashCommandsApi
-          Stage: !Ref SlashCommandsApi.Stage
-      Quota:
-        Limit: 16000
-        Period: DAY
-      Throttle:
-        BurstLimit: 10
-        RateLimit: 10
 
   SlashCommandsApi:
     Type: AWS::Serverless::Api
     Properties:
       EndpointConfiguration: REGIONAL
       StageName: Prod
+      OpenApiVersion: "2.0"
+      MethodSettings:
+        - HttpMethod: '*'
+          ResourcePath: '/*'
+          ThrottlingRateLimit: 10
+          ThrottlingBurstLimit: 10
+
       DefinitionBody:
         swagger: 2.0
         x-amazon-apigateway-request-validators:
@@ -110,7 +83,5 @@ Resources:
 
 Outputs:
 
-  ApiKeyId:
-    Value: !Ref ApiKey
   ApiUrl:
     Value: !Sub "${SlashCommandsApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/${SlashCommandsApi.Stage}"

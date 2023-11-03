@@ -54,14 +54,24 @@ def lambda_handler(event, context):
             "body": '{"error":"Bad timestamp."}'
         }
 
-    if json.loads(event["body"])["type"] == 1:
+    body = json.loads(event["body"])
+    if body["type"] == 1:
         return {
             "statusCode": 200,
             "body": '{"type":1}'
         }
+    elif body["type"] == 2:
+        return handle_command(body)
     return {
         "statusCode": 500,
         "body": '{"message":"Unhandled interaction type."}'
+    }
+
+
+def handle_command(body):
+    return {
+        "statusCode": 200,
+        "body": '{"type":4,"data":{"content":"rolling the dice, baybee"}}',
     }
 
 
