@@ -70,8 +70,10 @@ def lambda_handler(event, context):
 
 def handle_command(body):
     try:
+        user = body["member"]["nick"]
         roll_expr = body["data"]["options"][0]["value"]
-        content = diceydice.evaluate(roll_expr)
+        result = diceydice.evaluate(roll_expr)
+        content = f'{user} rolled `"{roll_expr}"`\nResult: {result}'
     except Exception as exc:
         content = ' '.join(exc.args)
 
