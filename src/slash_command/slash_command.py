@@ -12,6 +12,32 @@ from nacl.exceptions import BadSignatureError
 DISCORD_PUBLIC_KEY = os.environ["DISCORD_PUBLIC_KEY"]
 DISCORD_CLIENT_ID = os.environ["DISCORD_CLIENT_ID"]
 HONEYCOMB_API_KEY = os.environ.get("HONEYCOMB_API_KEY")
+HELP_TEXT = '''
+Basic dice format syntax:
+* `XdY` - roll `X` dice with `Y` sides each.
+* `XdYh` - roll `X` dice with `Y` sides each, keeping only the highest value rolled.
+* `XdYhZ` - roll `X` dice with `Y` sides each, keeping only the `Z` highest values rolled.
+* `XdYl` - roll `X` dice with `Y` sides each, keeping only the lowest value rolled.
+* `XdYlZ` - roll `X` dice with `Y` sides each, keeping only the `Z` lowest values rolled.
+
+Examples:
+* `/dice 4d6` - roll four 6-sided dice, adding all the results together
+* `/dice 2d20l` - roll two 20-sided dice, keeping only the low value
+* `/dice 4d20h2` - roll four 20-sided dice, adding the two highest values together
+
+Add multiple dice rolls together with `+` or group them with `()`.
+
+Examples:
+* `/dice 1d20 + 1d6` - roll a d20 and a d6, adding their values together
+* `/dice (1d2 + 1d4 + 1d6 + 1d8)h` - roll four dice, keeping only the highest value
+* `/dice 1d20 + (1d2 + 1d4 + 1d6 + 1d8)h` - add the d20 to the highest of the other four dice
+
+Special dice:
+* `Xc` - roll `X` combat/challenge dice, as used by the 2d20 system
+
+Examples:
+* `/dice 4c` - roll 4 combat/challenge dice, counting their results and showing those rolled with effects
+'''
 
 verify = VerifyKey(bytes.fromhex(DISCORD_PUBLIC_KEY)).verify
 
@@ -71,9 +97,12 @@ def lambda_handler(event, context):
 def handle_command(body):
     try:
         user = body["member"]["nick"]
-        roll_expr = body["data"]["options"][0]["value"]
-        result = diceydice.evaluate(roll_expr)
-        content = f'{user} rolled `"{roll_expr}"`\nResult: {result}'
+        roll_expr = body["data"]["options"][0]["value"].strip()
+        if roll_expr:
+            result = diceydice.evaluate(roll_expr)
+            content = f'{user} rolled `"{roll_expr}"`\nResult: {result}'
+        else:
+            content = HELP_TEXT
     except Exception as exc:
         content = ' '.join(exc.args)
 
