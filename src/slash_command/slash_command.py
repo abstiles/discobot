@@ -32,11 +32,13 @@ Examples:
 * `/dice (1d2 + 1d4 + 1d6 + 1d8)h` - roll four dice, keeping only the highest value
 * `/dice 1d20 + (1d2 + 1d4 + 1d6 + 1d8)h` - add the d20 to the highest of the other four dice
 
-Special dice:
-* `Xc` - roll `X` combat/challenge dice, as used by the 2d20 system
+2d20 system dice:
+* `Xc` - roll `X` combat/challenge dice
+* `Xd20<-Z` roll `X` d20 dice, counting successes under value `Z`
 
 Examples:
-* `/dice 4c` - roll 4 combat/challenge dice, counting their results and showing those rolled with effects
+* `/dice 4c` - roll 4 combat/challenge dice, counting their results and showing those rolled with effects as `results{effects}`
+* `/dice 5d20<-10` roll 5 d20 dice, counting how many rolled 10 or less, 1s as double-success, and 20 as complications. Responds with `successes{complications}`.
 '''
 
 verify = VerifyKey(bytes.fromhex(DISCORD_PUBLIC_KEY)).verify
@@ -98,7 +100,7 @@ def handle_command(body):
     try:
         user = body["member"]["nick"]
         roll_expr = body["data"]["options"][0]["value"].strip()
-        if roll_expr:
+        if roll_expr and 'help' not in roll_expr.lower():
             result = diceydice.evaluate(roll_expr)
             content = f'{user} rolled `"{roll_expr}"`\nResult: {result}'
         else:

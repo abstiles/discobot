@@ -4,5 +4,5 @@ libhoney==1.10.0
 pynacl==1.4.0
 six==1.15.0
 wrapt==1.12.1
-git+https://github.com/abstiles/diceydice@85c5a59f3433eb4cafff224a9ed82faee50accf0#egg=diceydice
+git+https://github.com/abstiles/diceydice@1e934d6fc0ee72f80198087f06593863160a5729#egg=diceydice
 typing-extensions==4.8.0
