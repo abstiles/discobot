@@ -98,7 +98,8 @@ def lambda_handler(event, context):
 
 def handle_command(body):
     try:
-        user = body["member"]["nick"]
+        member = body["member"]
+        user = member["nick"] or member["user"]["global_name"] or member["user"]["username"]
         roll_expr = body["data"]["options"][0]["value"].strip()
         if roll_expr and 'help' not in roll_expr.lower():
             result = diceydice.evaluate(roll_expr)
